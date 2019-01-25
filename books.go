@@ -1,9 +1,8 @@
 package books
 
 type Book struct {
-	ID			int
-	Author		string
-	Title		string
-	Description	string
-	Price		int
+	Author		string	`xcol:"1"`
+	Title		string	`xcol:"2"`
+	Description	string	`xcol:"3"`
+	Price		int		`xcol:"11"`
 }
