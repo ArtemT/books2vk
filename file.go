@@ -5,12 +5,13 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/plandem/xlsx"
+	"github.com/plandem/xlsx/format"
 )
 
 type File struct {
-	path     	string
-	modified 	bool
-	doc			xlsx.Spreadsheet
+	path     string
+	modified bool
+	doc      xlsx.Spreadsheet
 }
 
 func OpenFile(p string) File {
@@ -68,15 +69,23 @@ func (f *File) Proceed() chan Book {
 }
 
 func (f *File) Update(in chan Book) chan struct{} {
-	// sh := f.doc.Sheet(0)
+	sh := f.doc.Sheet(0)
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for b := range in {
 			spew.Dump("Update: " + strconv.Itoa(b.Row))
-			// st := sh.Cell(StCol, b.Row)
-			// st.SetString("test")
-			// f.modified = true
+			st := sh.Cell(IdCol, b.Row)
+			st.SetInt(b.MktId)
+			lock := f.doc.AddFormatting(
+				format.New(
+					format.Font.Size(10.0),
+					format.Fill.Color("#99CC99"),
+					format.Protection.Locked,
+				),
+			)
+			st.SetFormatting(lock)
+			f.modified = true
 		}
 	}()
 	return done

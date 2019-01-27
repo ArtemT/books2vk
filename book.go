@@ -11,15 +11,15 @@ type Book struct {
 	Title       string    `xcol:"2"`
 	Description string    `xcol:"3"`
 	Price       int       `xcol:"11"`
-	Op          operation `xcol:"19"`
-	Status      string    `xcol:"20"`
+	MktId       int       `xcol:"19"`
+	Op          operation `xcol:"20"`
 	Row         int
 }
 
 // A bodge, keep it in sync with above
 const (
-	OpCol = 19
-	StCol = 20
+	IdCol = 19
+	OpCol = 20
 )
 
 func (b *Book) SetValues(f func(int) string) {
