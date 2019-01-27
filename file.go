@@ -10,7 +10,7 @@ type File struct {
 	doc			xlsx.Spreadsheet
 }
 
-func WithFile(p string) File {
+func OpenFile(p string) File {
 	var f File
 	f.path = p
 	f.modified = false
@@ -46,14 +46,14 @@ func (f *File) Read() []Book {
 	var books []Book
 	sh := f.doc.Sheet(0)
 	for rows := sh.Rows(); rows.HasNext(); {
-		_, row := rows.Next()
+		i, row := rows.Next()
 		// Don't care if no operation is required
-		if len(row.Cell(19).String()) == 0 {
+		if len(row.Cell(OpCol).String()) == 0 {
 			break
 		}
-		b := Book{}
-		b.SetValues(func (i int) string {
-			return row.Cell(i).String()
+		b := Book{ Row: i }
+		b.SetValues(func (col int) string {
+			return row.Cell(col).String()
 		})
 		books = append(books, b)
 	}

@@ -13,7 +13,7 @@ func main() {
 	flag.StringVar(&path, "file", "", "Input XLSX file")
 	flag.Parse()
 
-	f := books2vk.WithFile(path)
+	f := books2vk.OpenFile(path)
 	books := f.Read()
 
 	spew.Dump(books)

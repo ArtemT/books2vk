@@ -2,32 +2,34 @@ package books2vk
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"strconv"
-	"time"
-
-	"github.com/oklog/ulid"
 )
 
 type Book struct {
-	Id          ulid.ULID `xcol:"21"`
 	Author      string    `xcol:"1"`
 	Title       string    `xcol:"2"`
 	Description string    `xcol:"3"`
 	Price       int       `xcol:"11"`
-	Operation   op        `xcol:"19"`
+	Op          operation `xcol:"19"`
 	Status      string    `xcol:"20"`
+	Row			int
 }
+// A bodge, keep it in sync with above
+const OpCol = 19
 
 func (b *Book) SetValues(f func(int) string) {
 	var u Book
 	ref := reflect.TypeOf(u)
 	for i := 0; i < ref.NumField(); i++ {
 		field := ref.Field(i)
-		xcol, err := strconv.Atoi(field.Tag.Get("xcol"))
+		tag := field.Tag.Get("xcol")
+		if len(tag) == 0 {
+			continue
+		}
+		xcol, err := strconv.Atoi(tag)
 		if err != nil {
-			fmt.Println("cannot convert tag to column index:", err)
+			fmt.Printf("cannot convert tag %s to column index: %v", tag, err)
 			continue
 		}
 		fieldType := field.Type.Name()
@@ -44,44 +46,22 @@ func (b *Book) SetValues(f func(int) string) {
 				}
 				reflect.ValueOf(b).Elem().FieldByName(field.Name).SetInt(int64(val))
 			}
-		case "op":
-			b.Operation.setId(f(xcol))
-		case "ULID":
-			b.setId(f(xcol))
+		case "operation":
+			b.setOp(f(xcol))
 		default:
 			fmt.Printf("type %s is not supported", fieldType)
 		}
 	}
 }
 
-func (b *Book) setId(s string) {
-	if len(s) > 0 {
-		if u, err := ulid.ParseStrict(s); err == nil {
-			b.Id = u
-			return
-		} else {
-			fmt.Println("wrong ULID:", err)
-		}
-	}
-	t := time.Unix(1000000, 0)
-	e := ulid.Monotonic(rand.New(rand.NewSource(t.UnixNano())), 0)
-	b.Id = ulid.MustNew(ulid.Timestamp(t), e)
-}
+type operation int
 
-func (b Book) getId() string {
-	return b.Id.String()
-}
-
-type op struct {
-	OpId int
-}
-
-func (o *op) setId(s string) {
+func (b *Book) setOp(s string) {
 	if len(s) > 0 {
 		i, err := strconv.Atoi(string(s[0]))
 		if err != nil {
 			fmt.Printf("not started with a number: %s, %v\n", s, err)
 		}
-		o.OpId = i
+		b.Op = operation(i)
 	}
 }
