@@ -1,6 +1,9 @@
 package books2vk
 
 import (
+	"strconv"
+
+	"github.com/davecgh/go-spew/spew"
 	"github.com/plandem/xlsx"
 )
 
@@ -42,20 +45,39 @@ func (f File) Close() {
 	}
 }
 
-func (f *File) Read() []Book {
-	var books []Book
+func (f *File) Proceed() chan Book {
 	sh := f.doc.Sheet(0)
-	for rows := sh.Rows(); rows.HasNext(); {
-		i, row := rows.Next()
-		// Don't care if no operation is required
-		if len(row.Cell(OpCol).String()) == 0 {
-			break
+	ch := make(chan Book)
+	go func() {
+		defer close(ch)
+		for rows := sh.Rows(); rows.HasNext(); {
+			i, row := rows.Next()
+			// Don't care if no operation is required
+			if len(row.Cell(OpCol).String()) == 0 {
+				break
+			}
+			b := Book{Row: i}
+			b.SetValues(func(col int) string {
+				return row.Cell(col).String()
+			})
+			spew.Dump("Proceed: " + strconv.Itoa(b.Row))
+			ch <- b
 		}
-		b := Book{ Row: i }
-		b.SetValues(func (col int) string {
-			return row.Cell(col).String()
-		})
-		books = append(books, b)
-	}
-	return books
+	}()
+	return ch
+}
+
+func (f *File) Update(in chan Book) chan struct{} {
+	// sh := f.doc.Sheet(0)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for b := range in {
+			spew.Dump("Update: " + strconv.Itoa(b.Row))
+			// st := sh.Cell(StCol, b.Row)
+			// st.SetString("test")
+			// f.modified = true
+		}
+	}()
+	return done
 }
