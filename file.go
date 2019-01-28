@@ -5,7 +5,6 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/plandem/xlsx"
-	"github.com/plandem/xlsx/format"
 )
 
 type File struct {
@@ -55,7 +54,7 @@ func (f *File) Proceed() chan Book {
 			i, row := rows.Next()
 			// Don't care if no operation is required
 			if len(row.Cell(OpCol).String()) == 0 {
-				break
+				continue
 			}
 			b := Book{Row: i}
 			b.SetValues(func(col int) string {
@@ -75,17 +74,18 @@ func (f *File) Update(in chan Book) chan struct{} {
 		defer close(done)
 		for b := range in {
 			spew.Dump("Update: " + strconv.Itoa(b.Row))
-			st := sh.Cell(IdCol, b.Row)
-			st.SetInt(b.MktId)
-			lock := f.doc.AddFormatting(
-				format.New(
-					format.Font.Size(10.0),
-					format.Fill.Color("#99CC99"),
-					format.Protection.Locked,
-				),
-			)
-			st.SetFormatting(lock)
-			f.modified = true
+
+			// Save/remove market_item_id from VK
+			mCell := sh.Cell(IdCol, b.Row)
+			if b.MktId > 0 {
+				mCell.SetInt(b.MktId)
+				sh.Cell(OpCol, b.Row).Clear()
+				f.modified = true
+			} else if mCellVal, _ := mCell.Int(); mCellVal > 0 {
+				mCell.Clear()
+				sh.Cell(OpCol, b.Row).Clear()
+				f.modified = true
+			}
 		}
 	}()
 	return done

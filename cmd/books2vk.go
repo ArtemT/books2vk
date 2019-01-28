@@ -21,7 +21,7 @@ func main() {
 	vk := NewVK("")
 
 	in := f.Proceed()
-	out := vk.Publish(in)
+	out := vk.Send(in)
 	done := f.Update(out)
 
 	<-done

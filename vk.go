@@ -21,12 +21,18 @@ func NewVK(conf string) VK {
 	return vk
 }
 
-func (vk VK) Publish(in chan Book) chan Book {
+func (vk VK) Send(in chan Book) chan Book {
 	out := make(chan Book)
 	go func() {
 		defer close(out)
 		for b := range in {
-			spew.Dump("Publish: " + strconv.Itoa(b.Row))
+			spew.Dump("Send: " + strconv.Itoa(b.Row))
+			switch b.Op {
+			case 1: // Publish
+				b.MktId = 123123
+			case 2: // Unpublish
+				b.MktId = 0
+			}
 			out <- b
 		}
 	}()
