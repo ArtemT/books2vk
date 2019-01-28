@@ -4,25 +4,29 @@ import (
 	"strconv"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/namsral/flag"
 	"github.com/plandem/xlsx"
 )
 
 type File struct {
-	path     string
-	modified bool
 	doc      xlsx.Spreadsheet
+	modified bool
 }
 
-func OpenFile(p string) File {
-	var f File
-	f.path = p
+func OpenFile() File {
+	var (
+		f    File
+		path string
+	)
+	flag.StringVar(&path, "file", "", "Input XLSX file")
+	flag.Parse()
+	f.Open(path)
 	f.modified = false
-	f.Open()
 	return f
 }
 
-func (f *File) Open() {
-	d, err := xlsx.Open(f.path)
+func (f *File) Open(path string) {
+	d, err := xlsx.Open(path)
 	if err != nil {
 		panic(err)
 	}

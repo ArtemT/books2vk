@@ -6,6 +6,11 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
+const (
+	ApiVer = "5.92"
+	BooksCategoryID = 901
+)
+
 type Service struct {
 	Owner	string
 	Secret string
