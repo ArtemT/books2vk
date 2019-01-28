@@ -18,7 +18,7 @@ func main() {
 		f.Close()
 	}()
 
-	vk := NewVK("")
+	vk := NewService("")
 
 	in := f.Proceed()
 	out := vk.Send(in)

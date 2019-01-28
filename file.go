@@ -75,7 +75,7 @@ func (f *File) Update(in chan Book) chan struct{} {
 		for b := range in {
 			spew.Dump("Update: " + strconv.Itoa(b.Row))
 
-			// Save/remove market_item_id from VK
+			// Save/remove market_item_id
 			mCell := sh.Cell(IdCol, b.Row)
 			if b.MktId > 0 {
 				mCell.SetInt(b.MktId)

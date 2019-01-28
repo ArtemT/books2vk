@@ -6,22 +6,23 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-type VK struct {
+type Service struct {
+	Owner	string
 	Secret string
 	// ...
 }
 
-func NewVK(conf string) VK {
+func NewService(conf string) Service {
 	// o := vkapi.Options{}
 	// api := vkapi.New(o)
 	// ...
-	vk := VK{
+	vk := Service{
 		// ...
 	}
 	return vk
 }
 
-func (vk VK) Send(in chan Book) chan Book {
+func (vk Service) Send(in chan Book) chan Book {
 	out := make(chan Book)
 	go func() {
 		defer close(out)

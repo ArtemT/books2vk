@@ -8,6 +8,7 @@ import (
 )
 
 type Book struct {
+	Category    category  `xcol:"0"`
 	Author      string    `xcol:"1"`
 	Title       string    `xcol:"2"`
 	Description string    `xcol:"3"`
@@ -17,6 +18,7 @@ type Book struct {
 	Op          operation `xcol:"20"`
 	Row         int
 }
+type category string
 type operation int
 type fName string
 
@@ -54,7 +56,13 @@ func (b *Book) SetValues(f func(int) string) {
 				}
 				reflect.ValueOf(b).Elem().FieldByName(field.Name).SetInt(int64(val))
 			}
-		case "fName": // Fuzzy filename of picture
+		case "category":
+			r, _ := regexp.Compile("[a-z0-9]+")
+			m := r.FindStringSubmatch(f(xcol))
+			if len(m) > 0 {
+				b.setCategory(m[0])
+			}
+		case "fName":
 			r, _ := regexp.Compile("[0-9]+\\.JPG")
 			m := r.FindStringSubmatch(f(xcol))
 			if len(m) > 0 {
@@ -63,9 +71,17 @@ func (b *Book) SetValues(f func(int) string) {
 		case "operation":
 			b.setOp(f(xcol))
 		default:
-			fmt.Printf("type %s is not supported", fieldType)
+			fmt.Printf("type %s is not supported\n", fieldType)
 		}
 	}
+}
+
+func (b *Book) setCategory(s string) {
+	b.Category = category(AlibCode(s))
+}
+
+func (b Book) getCategory() string {
+	return string(b.Category)
 }
 
 func (b *Book) setPic(s string) {
