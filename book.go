@@ -3,6 +3,7 @@ package books2vk
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 )
 
@@ -11,10 +12,13 @@ type Book struct {
 	Title       string    `xcol:"2"`
 	Description string    `xcol:"3"`
 	Price       int       `xcol:"11"`
+	Pic         fName     `xcol:"15"`
 	MktId       int       `xcol:"19"`
 	Op          operation `xcol:"20"`
 	Row         int
 }
+type operation int
+type fName string
 
 // A bodge, keep it in sync with above
 const (
@@ -50,6 +54,12 @@ func (b *Book) SetValues(f func(int) string) {
 				}
 				reflect.ValueOf(b).Elem().FieldByName(field.Name).SetInt(int64(val))
 			}
+		case "fName": // Fuzzy filename of picture
+			r, _ := regexp.Compile("[0-9]+\\.JPG")
+			m := r.FindStringSubmatch(f(xcol))
+			if len(m) > 0 {
+				reflect.ValueOf(b).Elem().FieldByName(field.Name).SetString(m[0])
+			}
 		case "operation":
 			b.setOp(f(xcol))
 		default:
@@ -58,7 +68,13 @@ func (b *Book) SetValues(f func(int) string) {
 	}
 }
 
-type operation int
+func (b *Book) setPic(s string) {
+	b.Pic = fName(s)
+}
+
+func (b Book) getPic() string {
+	return string(b.Pic)
+}
 
 func (b *Book) setOp(s string) {
 	if len(s) > 0 {
@@ -68,4 +84,8 @@ func (b *Book) setOp(s string) {
 		}
 		b.Op = operation(i)
 	}
+}
+
+func (b Book) GetOp() int {
+	return int(b.Op)
 }

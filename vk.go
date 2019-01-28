@@ -27,7 +27,8 @@ func (vk VK) Send(in chan Book) chan Book {
 		defer close(out)
 		for b := range in {
 			spew.Dump("Send: " + strconv.Itoa(b.Row))
-			switch b.Op {
+			spew.Dump(b)
+			switch b.GetOp() {
 			case 1: // Publish
 				b.MktId = 123123
 			case 2: // Unpublish
