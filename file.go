@@ -11,12 +11,16 @@ import (
 
 type File struct {
 	doc      xlsx.Spreadsheet
+	config   *viper.Viper
 	modified bool
 }
 
 func OpenFile() File {
-	f := File{ modified: false }
-	path := viper.GetString("file")
+	f := File{
+		config:   viper.Sub("xlsx"),
+		modified: false,
+	}
+	path := f.config.GetString("file")
 	if len(path) == 0 {
 		log.Fatal("No file specified. Usage: book2vk --file=example.xlsx")
 	}
@@ -51,15 +55,17 @@ func (f File) Close() {
 func (f *File) Proceed() chan Book {
 	sh := f.doc.Sheet(0)
 	ch := make(chan Book)
+	opCol := f.config.GetInt("opcol")
 	go func() {
 		defer close(ch)
 		for rows := sh.Rows(); rows.HasNext(); {
 			i, row := rows.Next()
 			// Don't care if no operation is required
-			if len(row.Cell(OpCol).String()) == 0 {
+			if len(row.Cell(opCol).String()) == 0 {
 				continue
 			}
 			b := Book{Row: i}
+			// @todo: It fails sometimes. Refactor it as a closure.
 			b.SetValues(func(col int) string {
 				return row.Cell(col).String()
 			})
@@ -73,20 +79,23 @@ func (f *File) Proceed() chan Book {
 func (f *File) Update(in chan Book) chan struct{} {
 	sh := f.doc.Sheet(0)
 	done := make(chan struct{})
+	opCol := f.config.GetInt("opcol")
+	idCol := f.config.GetInt("idcol")
 	go func() {
 		defer close(done)
 		for b := range in {
 			spew.Dump("Update: " + strconv.Itoa(b.Row))
 
 			// Save/remove market_item_id
-			mCell := sh.Cell(IdCol, b.Row)
+			// @todo: Move it to callback in vk.go
+			mCell := sh.Cell(idCol, b.Row)
 			if b.MktId > 0 {
 				mCell.SetInt(b.MktId)
-				sh.Cell(OpCol, b.Row).Clear()
+				sh.Cell(opCol, b.Row).Clear()
 				f.modified = true
 			} else if mCellVal, _ := mCell.Int(); mCellVal > 0 {
 				mCell.Clear()
-				sh.Cell(OpCol, b.Row).Clear()
+				sh.Cell(opCol, b.Row).Clear()
 				f.modified = true
 			}
 		}

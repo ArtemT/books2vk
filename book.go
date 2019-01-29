@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Book struct {
@@ -12,19 +13,13 @@ type Book struct {
 	Title       string    `xcol:"2"`
 	Description string    `xcol:"3"`
 	Price       int       `xcol:"11"`
-	Pic         fName     `xcol:"15"`
+	Pic         numjpg    `xcol:"15"`
 	MktId       int       `xcol:"19"`
 	Op          operation `xcol:"20"`
 	Row         int
 }
-type operation int
-type fName string
-
-// A bodge, keep it in sync with above
-const (
-	IdCol = 19
-	OpCol = 20
-)
+type operation string
+type numjpg string
 
 func (b *Book) SetValues(f func(int) string) {
 	var u Book
@@ -54,7 +49,7 @@ func (b *Book) SetValues(f func(int) string) {
 				}
 				reflect.ValueOf(b).Elem().FieldByName(field.Name).SetInt(int64(val))
 			}
-		case "fName":
+		case "numjpg":
 			r, _ := regexp.Compile("[0-9]+\\.JPG")
 			m := r.FindStringSubmatch(f(xcol))
 			if len(m) > 0 {
@@ -69,7 +64,7 @@ func (b *Book) SetValues(f func(int) string) {
 }
 
 func (b *Book) setPic(s string) {
-	b.Pic = fName(s)
+	b.Pic = numjpg(s)
 }
 
 func (b Book) getPic() string {
@@ -78,14 +73,14 @@ func (b Book) getPic() string {
 
 func (b *Book) setOp(s string) {
 	if len(s) > 0 {
-		i, err := strconv.Atoi(string(s[0]))
-		if err != nil {
-			fmt.Printf("not started with a number: %s, %v\n", s, err)
+		sl := strings.Split(s, "|")
+		if len(sl) < 2 {
+			fmt.Printf("No operation string found: %s.\n", s)
 		}
-		b.Op = operation(i)
+		b.Op = operation(sl[1])
 	}
 }
 
-func (b Book) GetOp() int {
-	return int(b.Op)
+func (b Book) GetOp() string {
+	return string(b.Op)
 }

@@ -35,9 +35,9 @@ func (vk Service) Send(in chan Book) chan Book {
 			spew.Dump("Send: " + strconv.Itoa(b.Row))
 			spew.Dump(b)
 			switch b.GetOp() {
-			case 1: // Publish
+			case "publish":
 				b.MktId = 123123
-			case 2: // Unpublish
+			case "unpublish":
 				b.MktId = 0
 			}
 			out <- b
