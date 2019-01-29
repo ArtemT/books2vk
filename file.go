@@ -1,11 +1,12 @@
 package books2vk
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/namsral/flag"
 	"github.com/plandem/xlsx"
+	"github.com/spf13/viper"
 )
 
 type File struct {
@@ -14,14 +15,12 @@ type File struct {
 }
 
 func OpenFile() File {
-	var (
-		f    File
-		path string
-	)
-	flag.StringVar(&path, "file", "", "Input XLSX file")
-	flag.Parse()
+	f := File{ modified: false }
+	path := viper.GetString("file")
+	if len(path) == 0 {
+		log.Fatal("No file specified. Usage: book2vk --file=example.xlsx")
+	}
 	f.Open(path)
-	f.modified = false
 	return f
 }
 
