@@ -56,22 +56,22 @@ func (b *Book) SetValues(f func(int) string) {
 				reflect.ValueOf(b).Elem().FieldByName(field.Name).SetString(m[0])
 			}
 		case "operation":
-			b.setOp(f(xcol))
+			b.SetOp(f(xcol))
 		default:
 			fmt.Printf("type %s is not supported\n", fieldType)
 		}
 	}
 }
 
-func (b *Book) setPic(s string) {
+func (b *Book) SetPic(s string) {
 	b.Pic = numjpg(s)
 }
 
-func (b Book) getPic() string {
+func (b Book) GetPic() string {
 	return string(b.Pic)
 }
 
-func (b *Book) setOp(s string) {
+func (b *Book) SetOp(s string) {
 	if len(s) > 0 {
 		sl := strings.Split(s, "|")
 		if len(sl) < 2 {
