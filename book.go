@@ -76,6 +76,7 @@ func (b *Book) setOp(s string) {
 		sl := strings.Split(s, "|")
 		if len(sl) < 2 {
 			fmt.Printf("No operation string found: %s.\n", s)
+			return
 		}
 		b.Op = operation(sl[1])
 	}

@@ -65,7 +65,7 @@ func (f *File) Proceed() chan Book {
 				continue
 			}
 			b := Book{Row: i}
-			// @todo: It fails sometimes. Refactor it as a closure.
+			// @todo: It fails sometimes. Make a test.
 			b.SetValues(func(col int) string {
 				return row.Cell(col).String()
 			})
