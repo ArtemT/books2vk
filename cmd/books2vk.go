@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	. "github.com/ArtemT/books2vk"
+	"github.com/ArtemT/books2vk/file"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -15,7 +14,7 @@ func init() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		fmt.Println("Config file is not loaded")
+		panic(err)
 	}
 	viper.SetEnvPrefix("books2vk")
 
@@ -28,7 +27,7 @@ func init() {
 }
 
 func main() {
-	f := OpenFile()
+	f := file.OpenFile()
 	defer func() {
 		f.Save()
 		f.Close()
@@ -36,7 +35,7 @@ func main() {
 
 	vk := NewService("")
 
-	in := f.Proceed()
+	in := f.Read()
 	out := vk.Send(in)
 	done := f.Update(out)
 
