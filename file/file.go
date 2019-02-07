@@ -74,10 +74,10 @@ func (r rowReader) Int(i int) int {
 }
 
 func (r rowReader) String(i int) string {
-	return r.row.Cell(i).Value()
+	return r.row.Cell(i).String()
 }
 
-func (r rowReader) RowNum() int {
+func (r rowReader) RowIdx() int {
 	return r.idx
 }
 
@@ -111,7 +111,6 @@ func (r rowWriter) Int(i int, v int) {
 		r.row.Cell(i).SetInt(v)
 	}
 }
-
 func (r rowWriter) String(i int, v string) {
 	if len(v) == 0 {
 		r.row.Cell(i).Clear()

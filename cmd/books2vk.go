@@ -2,6 +2,7 @@ package main
 
 import (
 	. "github.com/ArtemT/books2vk"
+	"github.com/ArtemT/books2vk/book"
 	"github.com/ArtemT/books2vk/file"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -24,6 +25,13 @@ func init() {
 	if err != nil {
 		println(err)
 	}
+	book.ConfigInit(bookConfLoader{})
+}
+
+type bookConfLoader struct{}
+
+func (bookConfLoader) Load() map[string]interface{} {
+	return viper.GetStringMap("cols")
 }
 
 func main() {

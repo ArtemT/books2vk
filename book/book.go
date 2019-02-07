@@ -7,22 +7,21 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/spf13/viper"
 )
 
 type Book struct {
-	Operation   operation
+	op          operation
 	Author      string
 	Title       string
 	Description string
 	Price       int
 	Picture     numJPG
 	MktId       int
-	row         rowNum
+	row         rowIdx
 }
 type operation string
 type numJPG string
-type rowNum int
+type rowIdx int
 
 func (b *Book) SetOp(s string) {
 	if len(s) > 0 {
@@ -31,28 +30,31 @@ func (b *Book) SetOp(s string) {
 			fmt.Printf("No operation string found: %s.\n", s)
 			return
 		}
-		b.Operation = operation(sl[1])
+		b.op = operation(sl[1])
 	} else {
-		b.Operation = ""
+		b.op = operation("")
 	}
 }
-
 func (b Book) GetOp() string {
-	return string(b.Operation)
+	return string(b.op)
 }
 
 func (b *Book) SetPic(s string) {
-	b.Picture = numJPG(s)
+	r, _ := regexp.Compile("[0-9]+\\.JPG")
+	m := r.FindStringSubmatch(s)
+	if len(m) > 0 {
+		b.Picture = numJPG(m[0])
+	} else {
+		fmt.Printf("Invalid filename: %s.\n", s)
+	}
 }
-
 func (b Book) GetPic() string {
 	return string(b.Picture)
 }
 
-func (b Book) SetRow(i int) {
-	b.row = rowNum(i)
+func (b *Book) SetRow(i int) {
+	b.row = rowIdx(i)
 }
-
 func (b Book) GetRow() int {
 	return int(b.row)
 }
@@ -60,44 +62,40 @@ func (b Book) GetRow() int {
 type rowReader interface {
 	Int(int) int
 	String(int) string
-	RowNum() int
+	RowIdx() int
 }
 
 func (b *Book) GetValues(reader rowReader) bool {
+	opCol := getCol("op")
+	op := reader.String(opCol)
+	// Break external loop early if no operation is set
+	if len(op) == 0 {
+		return false
+	}
+	b.SetOp(reader.String(opCol))
+	b.SetRow(reader.RowIdx())
+
 	ref := reflect.TypeOf(Book{})
 	for i := 0; i < ref.NumField(); i++ {
 		field := ref.Field(i)
-		if field.Name == "row" { // TODO: Exclude unexported fields.
+		if field.Name == "op" || field.Name == "row" { // TODO: Find a way to exclude unexported fields.
 			continue
 		}
-		col := getCol(field.Name)
 		fieldType := field.Type.Name()
-		spew.Println(field.Name)
+		col := getCol(field.Name)
+
 		switch fieldType {
-		case "operation":
-			op := reader.String(col)
-			// Break external loop early if no operation is set
-			if len(op) == 0 {
-				return false
-			}
-			b.SetOp(reader.String(col))
 		case "int":
 			reflect.ValueOf(b).Elem().FieldByName(field.Name).SetInt(int64(reader.Int(col)))
 		case "string":
 			reflect.ValueOf(b).Elem().FieldByName(field.Name).SetString(reader.String(col))
 		case "numJPG":
-			r, _ := regexp.Compile("[0-9]+\\.JPG")
-			m := r.FindStringSubmatch(reader.String(col))
-			if len(m) > 0 {
-				reflect.ValueOf(b).Elem().FieldByName(field.Name).SetString(m[0])
-			}
-		case "rowNum":
-			b.SetRow(reader.RowNum())
+			b.SetPic(reader.String(col))
 		default:
-			fmt.Printf("type %s is not supported\n", fieldType)
+			fmt.Printf("Field %s of type %s is not supported\n", field.Name, fieldType)
 		}
 	}
-	return len(b.Author) > 0 && len(b.Title) > 0 && b.Price > 0
+	return len(b.Author) > 0 && len(b.Title) > 0 && b.Price > 0 // TODO: Find out which fields are mandatory.
 }
 
 type rowWriter interface {
@@ -107,8 +105,8 @@ type rowWriter interface {
 
 func (b Book) SetValues(writer rowWriter) {
 	writer.Int(getCol("MktId"), b.MktId)
-	if len(b.Operation) == 0 {
-		writer.String(getCol("Operation"), "")
+	if len(b.op) == 0 {
+		writer.String(getCol("op"), "")
 	}
 }
 
@@ -121,9 +119,16 @@ type config struct {
 
 var conf *config
 
-func newConfig() *config {
+type configLoader interface {
+	Load() map[string]interface{}
+}
+
+func ConfigInit(cl configLoader) {
+	if conf != nil {
+		return
+	}
 	c := config{col: make(map[string]int)}
-	for name, v := range viper.GetStringMap("cols") {
+	for name, v := range cl.Load() { // viper.GetStringMap("cols")
 		col, ok := v.(int)
 		if !ok {
 			fmt.Printf("Cannot convert column %s index value %v to integer.\n", name, v)
@@ -131,20 +136,13 @@ func newConfig() *config {
 		}
 		c.col[name] = col
 	}
-	spew.Println("book.newConfig")
-	return &c
-}
-
-func initConfig() {
-	if conf == nil {
-		conf = newConfig()
-	}
+	spew.Println("book.ConfigInit()")
+	conf = &c
 }
 
 func getCol(fieldName string) int {
-	initConfig()
 	col, ok := conf.col[strings.ToLower(fieldName)]
-	if !ok || col == 0 {
+	if !ok {
 		fmt.Printf("No column index is configured for field %s.\n", fieldName)
 		return 0
 	}
